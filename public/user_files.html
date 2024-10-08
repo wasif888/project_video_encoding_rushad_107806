@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Files</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>My Videos</h2>
+        <div id="video-list"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('You are not logged in');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/videos', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}` // Add 'Bearer ' prefix
+                    }
+                });
+
+                if (response.ok) {
+                    const videos = await response.json();
+                    const videoList = document.getElementById('video-list');
+                    videoList.innerHTML = '';
+
+                    videos.forEach(video => {
+                        const videoElement = document.createElement('div');
+                        videoElement.classList.add('video-item');
+                        videoElement.innerHTML = `
+                            <p>Video ID: ${video.videoId}</p>
+                            <button onclick="downloadVideo('${video.videoId}')">Download</button>
+                            <button onclick="transcodeVideo('${video.videoId}')">Transcode</button>
+                        `;
+                        videoList.appendChild(videoElement);
+                    });
+                } else {
+                    const errorData = await response.json();
+                    alert(`Error loading videos: ${errorData.message || 'Unknown error'}`);
+                }
+            } catch (err) {
+                console.error('Error fetching videos:', err);
+                alert('Error loading videos');
+            }
+        });
+
+        async function downloadVideo(videoId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('You are not logged in');
+                return;
+            }
+
+            window.location.href = `/download/${videoId}`;
+        }
+
+        async function transcodeVideo(videoId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('You are not logged in');
+                return;
+            }
+
+            const format = prompt('Enter format to transcode to (e.g., mp4, avi):');
+            if (!format) return;
+
+            try {
+                const response = await fetch('/transcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // Add 'Bearer ' prefix
+                    },
+                    body: JSON.stringify({ videoId, format })
+                });
+
+                if (response.ok) {
+                    alert('Video transcoded successfully');
+                } else {
+                    const errorData = await response.json();
+                    alert(`Error transcoding video: ${errorData.message || 'Unknown error'}`);
+                }
+            } catch (err) {
+                console.error('Error transcoding video:', err);
+                alert('Error transcoding video');
+            }
+        }
+    </script>
+</body>
+</html>

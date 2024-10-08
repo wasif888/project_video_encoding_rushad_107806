@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Video</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Upload Video</h2>
+        <form id="upload-form">
+            <input type="file" id="video" accept="video/*" required><br>
+            <button type="submit">Upload</button>
+        </form>
+        <button onclick="viewFiles()">View My Files</button>
+        <p id="upload-message"></p>
+    </div>
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const token = localStorage.getItem('token');
+            console.log('Token received:', token);  
+            if (!token) {
+                alert('You are not logged in');
+                return;
+            }
+
+            const videoFile = document.getElementById('video').files[0];
+            if (!videoFile) {
+                alert('Please select a video file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('video', videoFile);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    document.getElementById('upload-message').textContent = 'Video uploaded successfully';
+                } else {
+                    const errorData = await response.json();
+                    document.getElementById('upload-message').textContent = `Upload failed: ${errorData.message || 'Unknown error'}`;
+                }
+            } catch (err) {
+                console.error('Fetch error:', err); 
+                document.getElementById('upload-message').textContent = 'Error uploading video';
+            }
+        });
+
+        function viewFiles() {
+            window.location.href = 'user_files.html';
+        }
+    </script>
+</body>
+</html>
